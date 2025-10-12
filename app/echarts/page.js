@@ -51,9 +51,9 @@ export default function SearchStudent() {
 
       if (data && data.length > 0) {
         // 按学生去重处理 - 基于姓名、年级和班级
-        //const uniqueStudents = data.reduce((acc, current) => {
+        const uniqueStudents = data.reduce((acc, current) => {
           // 创建唯一标识符：姓名+年级+班级
-          const studentKey = `${current.姓名}-${current.年级}-${current.班级}`;
+          //const studentKey = `${current.姓名}-${current.年级}-${current.班级}`;
           
           // 如果这个学生还没有被添加到结果中
           if (!acc.some(student => 
