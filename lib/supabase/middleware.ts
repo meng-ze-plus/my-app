@@ -74,3 +74,18 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse;
 }
+
+// 🔧 添加这个配置来强制使用 Node.js Runtime
+export const config = {
+  runtime: 'nodejs', // 强制使用 Node.js 运行时
+  matcher: [
+    /*
+     * 匹配所有路径，但排除以下路径：
+     * - _next/static (静态文件)
+     * - _next/image (图片优化)
+     * - favicon.ico (网站图标)
+     * - 公开文件
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
