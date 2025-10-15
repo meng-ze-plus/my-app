@@ -235,99 +235,105 @@ export default function SearchStudent() {
       })
       
       // 配置图表选项
-      const option = {
-        title: {
-          text: `${selectedStudent.姓名} - 成绩趋势图`,
-          top: 10,
-          left: 10,
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'shadow'
-          }
-        },
-        legend: {
-          data: updatedDimensions,
-          top: 'top'
-        },
-        toolbox: {
-          show: true,
-          orient: 'horizontal',
-          left: 'right',
-          top: 'top',
-          feature: {
-            saveAsImage: { show: true }
-          }
-        },
-        dataset: {
-          dimensions: updatedDimensions,
-          source: source
-        },
-        dataZoom: [{
-          type: 'slider',
-          start: 0,
-          end: 100
-        }],
-        series: (function () {
-          var series = []
-          for (let i = 1; i < updatedDimensions.length; i++) {
-            var sname = updatedDimensions[i]
-            // 如果是排名相关的数据，使用折线图和右侧y轴
-            if (sname.includes("次") || sname.includes("名次")) {
-              series.push({
-                name: sname,
-                type: 'line',
-                barGap: 0,
-                barWidth: 20,
-                emphasis: { focus: 'series' },
-                yAxisIndex: 1,
-                label: {
-                  show: true,
-                  position: "top",
-                  formatter: function (params) {
-                    return `${params.seriesName}: ${params.value[sname]}`
-                  }
-                }
-              })
-            } else {
-              // 得分数据使用柱状图和左侧y轴
-              series.push({
-                name: sname,
-                type: 'bar',
-                emphasis: { focus: 'series' },
-                yAxisIndex: 0,
-                label: {
-                  show: true,
-                  position: "insideTop",
-                  formatter: function (params) {
-                    return `${params.seriesName}: ${params.value[sname]}`
-                  }
-                }
-              })
+const option = {
+  title: {
+    text: `${selectedStudent.姓名} - 成绩趋势图`,
+    top: 10,
+    left: 10,
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    }
+  },
+  legend: {
+    data: updatedDimensions,
+    top: 'top'
+  },
+  toolbox: {
+    show: true,
+    orient: 'horizontal',
+    left: 'right',
+    top: 'top',
+    feature: {
+      saveAsImage: { show: true }
+    }
+  },
+  dataset: {
+    dimensions: updatedDimensions,
+    source: source
+  },
+  dataZoom: [{
+    type: 'slider',
+    start: 0,
+    end: 100
+  }],
+  series: (function () {
+    var series = []
+    for (let i = 1; i < updatedDimensions.length; i++) {
+      // 将 sname 保存为局部变量，避免闭包问题
+      const dimensionName = updatedDimensions[i];
+      
+      // 如果是排名相关的数据，使用折线图和右侧y轴
+      if (dimensionName.includes("次") || dimensionName.includes("名次")) {
+        series.push({
+          name: dimensionName,
+          type: 'line',
+          barGap: 0,
+          barWidth: 20,
+          emphasis: { focus: 'series' },
+          yAxisIndex: 1,
+          label: {
+            show: true,
+            position: "top",
+            formatter: function (params) {
+              // 使用闭包捕获的 dimensionName
+              const value = params.data[dimensionName];
+              return `${params.seriesName}: ${value}`;
             }
           }
-          return series
-        })(),
-        xAxis: { 
-          type: 'category',
-          name: '考次'
-        },
-        yAxis: [
-          {
-            name: '得分',
-            type: 'value',
-            inverse: false,
-            nameLocation: 'end',
-          },
-          {
-            name: '排名',
-            type: 'value',
-            inverse: true, // 排名数字越小越靠前，所以需要逆序
-            nameLocation: 'start',
+        })
+      } else {
+        // 得分数据使用柱状图和左侧y轴
+        series.push({
+          name: dimensionName,
+          type: 'bar',
+          emphasis: { focus: 'series' },
+          yAxisIndex: 0,
+          label: {
+            show: true,
+            position: "insideTop",
+            formatter: function (params) {
+              // 使用闭包捕获的 dimensionName
+              const value = params.data[dimensionName];
+              return `${params.seriesName}: ${value}`;
+            }
           }
-        ],
+        })
       }
+    }
+    return series
+  })(),
+  xAxis: { 
+    type: 'category',
+    name: '考次'
+  },
+  yAxis: [
+    {
+      name: '得分',
+      type: 'value',
+      inverse: false,
+      nameLocation: 'end',
+    },
+    {
+      name: '排名',
+      type: 'value',
+      inverse: true,
+      nameLocation: 'start',
+    }
+  ],
+};
       
       myChart.setOption(option)
       
