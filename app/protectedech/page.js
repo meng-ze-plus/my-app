@@ -1,84 +1,185 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from 'next-themes'
-
-// 定义类型
-interface Student {
-  姓名: string;
-  年级: string;
-  班级: string;
-  representativeId?: string | number;
-}
-
-interface StudentRecord {
-  考次: string;
-  总分_得分: number;
-  总分_原始分: number;
-  总分_校次: number;
-  总分_班次: number;
-  总分_联考名次: number;
-  语文_得分?: number;
-  语文_原始分?: number;
-  语文_校次?: number;
-  语文_班次?: number;
-  数学_得分?: number;
-  数学_原始分?: number;
-  数学_校次?: number;
-  数学_班次?: number;
-  英语_得分?: number;
-  英语_原始分?: number;
-  英语_校次?: number;
-  英语_班次?: number;
-  物理_得分?: number;
-  物理_原始分?: number;
-  物理_校次?: number;
-  物理_班次?: number;
-  化学_得分?: number;
-  化学_原始分?: number;
-  化学_校次?: number;
-  化学_班次?: number;
-  生物_得分?: number;
-  生物_原始分?: number;
-  生物_校次?: number;
-  生物_班次?: number;
-  历史_得分?: number;
-  历史_原始分?: number;
-  历史_校次?: number;
-  历史_班次?: number;
-  政治_得分?: number;
-  政治_原始分?: number;
-  政治_校次?: number;
-  政治_班次?: number;
-  地理_得分?: number;
-  地理_原始分?: number;
-  地理_校次?: number;
-  地理_班次?: number;
-  [key: string]: any;
-}
 
 export default function SearchStudent() {
   const [searchValue, setSearchValue] = useState('')
   const [searchType, setSearchType] = useState('id')
-  const [matchedStudents, setMatchedStudents] = useState<Student[]>([])
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [studentsData, setStudentsData] = useState<StudentRecord[]>([])
+  const [matchedStudents, setMatchedStudents] = useState([])
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [studentsData, setStudentsData] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(null)
   const [showStudentList, setShowStudentList] = useState(false)
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
-  const [selectedDisplayOptions, setSelectedDisplayOptions] = useState<string[]>([])
-  const [chartInstance, setChartInstance] = useState<any>(null)
+  const [selectedSubjects, setSelectedSubjects] = useState([])
+  const [selectedDisplayOptions, setSelectedDisplayOptions] = useState([])
+  const [chartInstance, setChartInstance] = useState(null)
 
   const { theme } = useTheme()
-  const chartRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef(null)
 
   const subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "政治", "地理", "总分"]
   const displayOptions = ['得分', '校次', '班次', '联考名次']
 
-  // 获取基于主题的图表颜色配置 - 使用 useCallback 避免不必要的重新创建
-  const getChartColors = useCallback(() => {
+  // 查询学生姓名的函数
+  const searchStudentNames = async () => {
+    if (!searchValue.trim()) {
+      setError('请输入一个有效的学生姓名')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      setMatchedStudents([])
+      setSelectedStudent(null)
+      setStudentsData([])
+
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from('学生成绩数据库')
+        .select('*')
+        .ilike('姓名', `%${searchValue}%`)
+        .order('姓名', { ascending: true })
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        const uniqueStudents = data.reduce((acc, current) => {
+          if (!acc.some(student =>
+            student.姓名 === current.姓名 &&
+            student.年级 === current.年级 &&
+            student.班级 === current.班级
+          )) {
+            acc.push({
+              姓名: current.姓名,
+              年级: current.年级,
+              班级: current.班级,
+              representativeId: current.id
+            });
+          }
+          return acc;
+        }, []);
+
+        setMatchedStudents(uniqueStudents)
+        setShowStudentList(true)
+      } else {
+        setError('未找到对应姓名的学生')
+      }
+
+    } catch (err) {
+      console.error('查询失败:', err)
+      setError(`查询失败: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 根据选中的学生查询详细成绩
+  const searchStudentDetails = async (student) => {
+    try {
+      setLoading(true)
+      setError(null)
+      setSelectedStudent(student)
+      setShowStudentList(false)
+
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from('学生成绩数据库')
+        .select("*")
+        .eq('姓名', student.姓名)
+        .eq('年级', student.年级)
+        .eq('班级', student.班级)
+        .order('考次', { ascending: true })
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        setStudentsData(data)
+        setSelectedSubjects(['总分', '语文'])
+        setSelectedDisplayOptions(['得分'])
+      } else {
+        setError('未找到该学生的成绩记录')
+      }
+
+    } catch (err) {
+      console.error('查询失败:', err)
+      setError(`查询失败: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 根据ID查询学生成绩的函数
+  const searchStudentById = async () => {
+    if (!searchValue.trim()) {
+      setError('请输入一个有效的学生ID')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      setMatchedStudents([])
+      setSelectedStudent(null)
+      setStudentsData([])
+      setShowStudentList(false)
+
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from('学生成绩数据库')
+        .select("*")
+        .eq('id', searchValue)
+        .order('考次', { ascending: true })
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        setStudentsData(data)
+        setSelectedStudent({
+          姓名: data[0].姓名,
+          年级: data[0].年级,
+          班级: data[0].班级
+        })
+        setSelectedSubjects(['总分', '语文'])
+        setSelectedDisplayOptions(['得分'])
+      } else {
+        setError('未找到对应ID的学生记录')
+      }
+
+    } catch (err) {
+      console.error('查询失败:', err)
+      setError(`查询失败: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 处理科目选择变化
+  const handleSubjectChange = (subject) => {
+    setSelectedSubjects(prev =>
+      prev.includes(subject)
+        ? prev.filter(s => s !== subject)
+        : [...prev, subject]
+    )
+  }
+
+  // 处理显示项目选择变化
+  const handleDisplayOptionChange = (option) => {
+    setSelectedDisplayOptions(prev =>
+      prev.includes(option)
+        ? prev.filter(o => o !== option)
+        : [...prev, option]
+    )
+  }
+
+  // 获取基于主题的图表颜色配置
+  const getChartColors = () => {
     if (theme === 'dark') {
       return {
         backgroundColor: '#1e1e1e',
@@ -104,161 +205,6 @@ export default function SearchStudent() {
         ]
       }
     }
-  }, [theme])
-
-  // 查询学生姓名的函数
-  const searchStudentNames = async () => {
-    if (!searchValue.trim()) {
-      setError('请输入一个有效的学生姓名')
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-      setMatchedStudents([])
-      setSelectedStudent(null)
-      setStudentsData([])
-
-      const supabase = createClient()
-
-      const { data, error: supabaseError } = await supabase
-        .from('学生成绩数据库')
-        .select('*')
-        .ilike('姓名', `%${searchValue}%`)
-        .order('姓名', { ascending: true })
-
-      if (supabaseError) throw supabaseError
-
-      if (data && data.length > 0) {
-        const uniqueStudents = data.reduce<Student[]>((acc, current) => {
-          if (!acc.some((student: Student) =>
-            student.姓名 === current.姓名 &&
-            student.年级 === current.年级 &&
-            student.班级 === current.班级
-          )) {
-            acc.push({
-              姓名: current.姓名,
-              年级: current.年级,
-              班级: current.班级,
-              representativeId: current.id
-            });
-          }
-          return acc;
-        }, []);
-
-        setMatchedStudents(uniqueStudents)
-        setShowStudentList(true)
-      } else {
-        setError('未找到对应姓名的学生')
-      }
-
-    } catch (err) {
-      console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 根据选中的学生查询详细成绩
-  const searchStudentDetails = async (student: Student) => {
-    try {
-      setLoading(true)
-      setError(null)
-      setSelectedStudent(student)
-      setShowStudentList(false)
-
-      const supabase = createClient()
-
-      const { data, error: supabaseError } = await supabase
-        .from('学生成绩数据库')
-        .select("*")
-        .eq('姓名', student.姓名)
-        .eq('年级', student.年级)
-        .eq('班级', student.班级)
-        .order('考次', { ascending: true })
-
-      if (supabaseError) throw supabaseError
-
-      if (data && data.length > 0) {
-        setStudentsData(data as StudentRecord[])
-        setSelectedSubjects(['总分', '语文'])
-        setSelectedDisplayOptions(['得分'])
-      } else {
-        setError('未找到该学生的成绩记录')
-      }
-
-    } catch (err) {
-      console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 根据ID查询学生成绩的函数
-  const searchStudentById = async () => {
-    if (!searchValue.trim()) {
-      setError('请输入一个有效的学生ID')
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-      setMatchedStudents([])
-      setSelectedStudent(null)
-      setStudentsData([])
-      setShowStudentList(false)
-
-      const supabase = createClient()
-
-      const { data, error: supabaseError } = await supabase
-        .from('学生成绩数据库')
-        .select("*")
-        .eq('id', searchValue)
-        .order('考次', { ascending: true })
-
-      if (supabaseError) throw supabaseError
-
-      if (data && data.length > 0) {
-        setStudentsData(data as StudentRecord[])
-        setSelectedStudent({
-          姓名: data[0].姓名,
-          年级: data[0].年级,
-          班级: data[0].班级
-        })
-        setSelectedSubjects(['总分', '语文'])
-        setSelectedDisplayOptions(['得分'])
-      } else {
-        setError('未找到对应ID的学生记录')
-      }
-
-    } catch (err) {
-      console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 处理科目选择变化
-  const handleSubjectChange = (subject: string) => {
-    setSelectedSubjects(prev =>
-      prev.includes(subject)
-        ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    )
-  }
-
-  // 处理显示项目选择变化
-  const handleDisplayOptionChange = (option: string) => {
-    setSelectedDisplayOptions(prev =>
-      prev.includes(option)
-        ? prev.filter(o => o !== option)
-        : [...prev, option]
-    )
   }
 
   // 渲染图表
@@ -285,11 +231,11 @@ export default function SearchStudent() {
         selectedDisplayOptions.map(option => `${subject}_${option}`)
       )
 
-      const updatedDimensions = [...resultArray]
+      let updatedDimensions = [...resultArray]
       updatedDimensions.unshift('考次')
 
       const source = studentsData.map(item => {
-        const row: Record<string, any> = { 考次: item.考次 }
+        const row = { 考次: item.考次 }
         selectedSubjects.forEach(subject => {
           selectedDisplayOptions.forEach(option => {
             const key = `${subject}_${option}`
@@ -300,10 +246,11 @@ export default function SearchStudent() {
       })
 
       // 配置图表选项
+      // 配置图表选项
       const option = {
         backgroundColor: colors.backgroundColor,
         title: {
-          text: `${selectedStudent?.姓名} - 成绩趋势图`,
+          text: `${selectedStudent.姓名} - 成绩趋势图`,
           top: 10,
           left: 10,
           textStyle: {
@@ -353,8 +300,9 @@ export default function SearchStudent() {
           }
         }],
         series: (function () {
-          const series: any[] = []
+          var series = []
           for (let i = 1; i < updatedDimensions.length; i++) {
+            // 将 dimensionName 保存为局部变量，避免闭包问题
             const dimensionName = updatedDimensions[i];
             const colorIndex = (i - 1) % colors.seriesColors.length;
 
@@ -379,7 +327,8 @@ export default function SearchStudent() {
                   color: colors.textColor,
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
-                  formatter: function (params: any) {
+                  formatter: function (params) {
+                    // 使用闭包捕获的 dimensionName
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -401,7 +350,8 @@ export default function SearchStudent() {
                   color: colors.textColor,
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
-                  formatter: function (params: any) {
+                  formatter: function (params) {
+                    // 使用闭包捕获的 dimensionName
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -490,14 +440,14 @@ export default function SearchStudent() {
         window.removeEventListener('resize', handleResize)
       }
     })
-  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme, chartInstance, getChartColors])
+  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme])
 
   // 其他函数保持不变...
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e) => {
     setSearchValue(e.target.value)
   }
 
-  const handleSearchTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchTypeChange = (e) => {
     setSearchType(e.target.value)
     setSearchValue('')
     setStudentsData([])
@@ -509,7 +459,7 @@ export default function SearchStudent() {
     setSelectedDisplayOptions([])
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     if (searchType === 'id') {
       searchStudentById()
@@ -518,7 +468,7 @@ export default function SearchStudent() {
     }
   }
 
-  const handleSelectStudent = (student: Student) => {
+  const handleSelectStudent = (student) => {
     searchStudentDetails(student)
   }
 
