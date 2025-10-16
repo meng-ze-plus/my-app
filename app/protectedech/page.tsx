@@ -673,7 +673,7 @@ export default function SearchStudent() {
                   </div>
                 </div>
 
-                {/* 各科成绩 */}
+                {/* 各科成绩  */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {['语文', '数学', '英语', '物理', '化学', '生物', '历史', '政治', '地理'].map((subject, idx) => (
                     record[`${subject}_原始分`] && (
