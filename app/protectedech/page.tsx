@@ -4,21 +4,75 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from 'next-themes'
 
+// 定义类型
+interface Student {
+  姓名: string;
+  年级: string;
+  班级: string;
+  representativeId?: string | number;
+}
+
+interface StudentRecord {
+  考次: string;
+  总分_得分: number;
+  总分_原始分: number;
+  总分_校次: number;
+  总分_班次: number;
+  总分_联考名次: number;
+  语文_得分?: number;
+  语文_原始分?: number;
+  语文_校次?: number;
+  语文_班次?: number;
+  数学_得分?: number;
+  数学_原始分?: number;
+  数学_校次?: number;
+  数学_班次?: number;
+  英语_得分?: number;
+  英语_原始分?: number;
+  英语_校次?: number;
+  英语_班次?: number;
+  物理_得分?: number;
+  物理_原始分?: number;
+  物理_校次?: number;
+  物理_班次?: number;
+  化学_得分?: number;
+  化学_原始分?: number;
+  化学_校次?: number;
+  化学_班次?: number;
+  生物_得分?: number;
+  生物_原始分?: number;
+  生物_校次?: number;
+  生物_班次?: number;
+  历史_得分?: number;
+  历史_原始分?: number;
+  历史_校次?: number;
+  历史_班次?: number;
+  政治_得分?: number;
+  政治_原始分?: number;
+  政治_校次?: number;
+  政治_班次?: number;
+  地理_得分?: number;
+  地理_原始分?: number;
+  地理_校次?: number;
+  地理_班次?: number;
+  [key: string]: any;
+}
+
 export default function SearchStudent() {
   const [searchValue, setSearchValue] = useState('')
   const [searchType, setSearchType] = useState('id')
-  const [matchedStudents, setMatchedStudents] = useState([])
-  const [selectedStudent, setSelectedStudent] = useState(null)
-  const [studentsData, setStudentsData] = useState([])
+  const [matchedStudents, setMatchedStudents] = useState<Student[]>([])
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [studentsData, setStudentsData] = useState<StudentRecord[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null) // 修复：明确指定类型为 string | null
+  const [error, setError] = useState<string | null>(null)
   const [showStudentList, setShowStudentList] = useState(false)
-  const [selectedSubjects, setSelectedSubjects] = useState([])
-  const [selectedDisplayOptions, setSelectedDisplayOptions] = useState([])
-  const [chartInstance, setChartInstance] = useState(null)
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [selectedDisplayOptions, setSelectedDisplayOptions] = useState<string[]>([])
+  const [chartInstance, setChartInstance] = useState<any>(null)
 
   const { theme } = useTheme()
-  const chartRef = useRef(null)
+  const chartRef = useRef<HTMLDivElement>(null)
 
   const subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "政治", "地理", "总分"]
   const displayOptions = ['得分', '校次', '班次', '联考名次']
@@ -55,7 +109,7 @@ export default function SearchStudent() {
   // 查询学生姓名的函数
   const searchStudentNames = async () => {
     if (!searchValue.trim()) {
-      setError('请输入一个有效的学生姓名') // 这里是第58行
+      setError('请输入一个有效的学生姓名')
       return
     }
 
@@ -77,8 +131,8 @@ export default function SearchStudent() {
       if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
-        const uniqueStudents = data.reduce((acc, current) => {
-          if (!acc.some(student =>
+        const uniqueStudents = data.reduce<Student[]>((acc, current) => {
+          if (!acc.some((student: Student) =>
             student.姓名 === current.姓名 &&
             student.年级 === current.年级 &&
             student.班级 === current.班级
@@ -101,14 +155,14 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }
   }
 
   // 根据选中的学生查询详细成绩
-  const searchStudentDetails = async (student) => {
+  const searchStudentDetails = async (student: Student) => {
     try {
       setLoading(true)
       setError(null)
@@ -128,7 +182,7 @@ export default function SearchStudent() {
       if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
-        setStudentsData(data)
+        setStudentsData(data as StudentRecord[])
         setSelectedSubjects(['总分', '语文'])
         setSelectedDisplayOptions(['得分'])
       } else {
@@ -137,7 +191,7 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }
@@ -169,7 +223,7 @@ export default function SearchStudent() {
       if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
-        setStudentsData(data)
+        setStudentsData(data as StudentRecord[])
         setSelectedStudent({
           姓名: data[0].姓名,
           年级: data[0].年级,
@@ -183,14 +237,14 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }
   }
 
   // 处理科目选择变化
-  const handleSubjectChange = (subject) => {
+  const handleSubjectChange = (subject: string) => {
     setSelectedSubjects(prev =>
       prev.includes(subject)
         ? prev.filter(s => s !== subject)
@@ -199,7 +253,7 @@ export default function SearchStudent() {
   }
 
   // 处理显示项目选择变化
-  const handleDisplayOptionChange = (option) => {
+  const handleDisplayOptionChange = (option: string) => {
     setSelectedDisplayOptions(prev =>
       prev.includes(option)
         ? prev.filter(o => o !== option)
@@ -235,7 +289,7 @@ export default function SearchStudent() {
       updatedDimensions.unshift('考次')
 
       const source = studentsData.map(item => {
-        const row = { 考次: item.考次 }
+        const row: Record<string, any> = { 考次: item.考次 }
         selectedSubjects.forEach(subject => {
           selectedDisplayOptions.forEach(option => {
             const key = `${subject}_${option}`
@@ -249,7 +303,7 @@ export default function SearchStudent() {
       const option = {
         backgroundColor: colors.backgroundColor,
         title: {
-          text: `${selectedStudent.姓名} - 成绩趋势图`,
+          text: `${selectedStudent?.姓名} - 成绩趋势图`,
           top: 10,
           left: 10,
           textStyle: {
@@ -299,7 +353,7 @@ export default function SearchStudent() {
           }
         }],
         series: (function () {
-          const series = []
+          const series: any[] = []
           for (let i = 1; i < updatedDimensions.length; i++) {
             const dimensionName = updatedDimensions[i];
             const colorIndex = (i - 1) % colors.seriesColors.length;
@@ -325,7 +379,7 @@ export default function SearchStudent() {
                   color: colors.textColor,
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
-                  formatter: function (params) {
+                  formatter: function (params: any) {
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -347,7 +401,7 @@ export default function SearchStudent() {
                   color: colors.textColor,
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
-                  formatter: function (params) {
+                  formatter: function (params: any) {
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -439,11 +493,11 @@ export default function SearchStudent() {
   }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme, chartInstance, getChartColors])
 
   // 其他函数保持不变...
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value)
   }
 
-  const handleSearchTypeChange = (e) => {
+  const handleSearchTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchType(e.target.value)
     setSearchValue('')
     setStudentsData([])
@@ -455,7 +509,7 @@ export default function SearchStudent() {
     setSelectedDisplayOptions([])
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchType === 'id') {
       searchStudentById()
@@ -464,7 +518,7 @@ export default function SearchStudent() {
     }
   }
 
-  const handleSelectStudent = (student) => {
+  const handleSelectStudent = (student: Student) => {
     searchStudentDetails(student)
   }
 
@@ -673,7 +727,7 @@ export default function SearchStudent() {
                   </div>
                 </div>
 
-                {/* 各科成绩  */}
+                {/* 各科成绩 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {['语文', '数学', '英语', '物理', '化学', '生物', '历史', '政治', '地理'].map((subject, idx) => (
                     record[`${subject}_原始分`] && (
