@@ -19,23 +19,21 @@ export function Hero() {
       </div>
       <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
       <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
+          快速提交 & 查询追踪 学生学情变化{" "}
         <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
+          href="/auth/sign-up"
           className="font-bold hover:underline"
           rel="noreferrer"
         >
-          Supabase
+          注册你的账户
         </a>{" "}
         and{" "}
         <a
-          href="https://nextjs.org/"
-          target="_blank"
+          href="/protectedech"
           className="font-bold hover:underline"
           rel="noreferrer"
         >
-          Next.js
+          查询数据
         </a>
       </p>
       <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
