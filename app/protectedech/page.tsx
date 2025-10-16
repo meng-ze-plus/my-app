@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from 'next-themes'
 
@@ -22,6 +22,35 @@ export default function SearchStudent() {
 
   const subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "政治", "地理", "总分"]
   const displayOptions = ['得分', '校次', '班次', '联考名次']
+
+  // 获取基于主题的图表颜色配置 - 使用 useCallback 避免不必要的重新创建
+  const getChartColors = useCallback(() => {
+    if (theme === 'dark') {
+      return {
+        backgroundColor: '#1e1e1e',
+        textColor: '#ffffff',
+        gridColor: '#2a2a2a',
+        axisLineColor: '#555555',
+        seriesColors: [
+          '#5470c6', '#91cc75', '#fac858', '#ee6666',
+          '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
+          '#ea7ccc'
+        ]
+      }
+    } else {
+      return {
+        backgroundColor: '#ffffff',
+        textColor: '#333333',
+        gridColor: '#f0f0f0',
+        axisLineColor: '#cccccc',
+        seriesColors: [
+          '#5470c6', '#91cc75', '#fac858', '#ee6666',
+          '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
+          '#ea7ccc'
+        ]
+      }
+    }
+  }, [theme])
 
   // 查询学生姓名的函数
   const searchStudentNames = async () => {
@@ -178,35 +207,6 @@ export default function SearchStudent() {
     )
   }
 
-  // 获取基于主题的图表颜色配置
-  const getChartColors = () => {
-    if (theme === 'dark') {
-      return {
-        backgroundColor: '#1e1e1e',
-        textColor: '#ffffff',
-        gridColor: '#2a2a2a',
-        axisLineColor: '#555555',
-        seriesColors: [
-          '#5470c6', '#91cc75', '#fac858', '#ee6666',
-          '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
-          '#ea7ccc'
-        ]
-      }
-    } else {
-      return {
-        backgroundColor: '#ffffff',
-        textColor: '#333333',
-        gridColor: '#f0f0f0',
-        axisLineColor: '#cccccc',
-        seriesColors: [
-          '#5470c6', '#91cc75', '#fac858', '#ee6666',
-          '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
-          '#ea7ccc'
-        ]
-      }
-    }
-  }
-
   // 渲染图表
   useEffect(() => {
     if (!studentsData.length || !selectedSubjects.length || !selectedDisplayOptions.length) return
@@ -231,7 +231,7 @@ export default function SearchStudent() {
         selectedDisplayOptions.map(option => `${subject}_${option}`)
       )
 
-      let updatedDimensions = [...resultArray]
+      const updatedDimensions = [...resultArray] // 修复：使用 const 而不是 let
       updatedDimensions.unshift('考次')
 
       const source = studentsData.map(item => {
@@ -245,7 +245,6 @@ export default function SearchStudent() {
         return row
       })
 
-      // 配置图表选项
       // 配置图表选项
       const option = {
         backgroundColor: colors.backgroundColor,
@@ -300,8 +299,8 @@ export default function SearchStudent() {
           }
         }],
         series: (function () {
-          var series = []
-          for (let i = 1; i < updatedDimensions.length; i++) {
+          const series = [] // 修复：使用 const 而不是 var
+          for (let i = 1; i < updatedDimensions.length; i++) { // 修复：使用 let 而不是 var
             // 将 dimensionName 保存为局部变量，避免闭包问题
             const dimensionName = updatedDimensions[i];
             const colorIndex = (i - 1) % colors.seriesColors.length;
@@ -440,7 +439,7 @@ export default function SearchStudent() {
         window.removeEventListener('resize', handleResize)
       }
     })
-  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme])
+  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme, chartInstance, getChartColors]) // 修复：添加缺失的依赖项
 
   // 其他函数保持不变...
   const handleInputChange = (e) => {
