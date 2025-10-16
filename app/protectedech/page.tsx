@@ -11,7 +11,7 @@ export default function SearchStudent() {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [studentsData, setStudentsData] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null) // 修复：明确指定类型为 string | null
   const [showStudentList, setShowStudentList] = useState(false)
   const [selectedSubjects, setSelectedSubjects] = useState([])
   const [selectedDisplayOptions, setSelectedDisplayOptions] = useState([])
@@ -55,7 +55,7 @@ export default function SearchStudent() {
   // 查询学生姓名的函数
   const searchStudentNames = async () => {
     if (!searchValue.trim()) {
-      setError('请输入一个有效的学生姓名')
+      setError('请输入一个有效的学生姓名') // 这里是第58行
       return
     }
 
@@ -68,13 +68,13 @@ export default function SearchStudent() {
 
       const supabase = createClient()
 
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('学生成绩数据库')
         .select('*')
         .ilike('姓名', `%${searchValue}%`)
         .order('姓名', { ascending: true })
 
-      if (error) throw error
+      if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
         const uniqueStudents = data.reduce((acc, current) => {
@@ -101,7 +101,7 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err.message}`)
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
     } finally {
       setLoading(false)
     }
@@ -117,7 +117,7 @@ export default function SearchStudent() {
 
       const supabase = createClient()
 
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('学生成绩数据库')
         .select("*")
         .eq('姓名', student.姓名)
@@ -125,7 +125,7 @@ export default function SearchStudent() {
         .eq('班级', student.班级)
         .order('考次', { ascending: true })
 
-      if (error) throw error
+      if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
         setStudentsData(data)
@@ -137,7 +137,7 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err.message}`)
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
     } finally {
       setLoading(false)
     }
@@ -160,13 +160,13 @@ export default function SearchStudent() {
 
       const supabase = createClient()
 
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('学生成绩数据库')
         .select("*")
         .eq('id', searchValue)
         .order('考次', { ascending: true })
 
-      if (error) throw error
+      if (supabaseError) throw supabaseError
 
       if (data && data.length > 0) {
         setStudentsData(data)
@@ -183,7 +183,7 @@ export default function SearchStudent() {
 
     } catch (err) {
       console.error('查询失败:', err)
-      setError(`查询失败: ${err.message}`)
+      setError(`查询失败: ${err instanceof Error ? err.message : String(err)}`) // 修复：安全地处理错误消息
     } finally {
       setLoading(false)
     }
@@ -231,7 +231,7 @@ export default function SearchStudent() {
         selectedDisplayOptions.map(option => `${subject}_${option}`)
       )
 
-      const updatedDimensions = [...resultArray] // 修复：使用 const 而不是 let
+      const updatedDimensions = [...resultArray]
       updatedDimensions.unshift('考次')
 
       const source = studentsData.map(item => {
@@ -299,9 +299,8 @@ export default function SearchStudent() {
           }
         }],
         series: (function () {
-          const series = [] // 修复：使用 const 而不是 var
-          for (let i = 1; i < updatedDimensions.length; i++) { // 修复：使用 let 而不是 var
-            // 将 dimensionName 保存为局部变量，避免闭包问题
+          const series = []
+          for (let i = 1; i < updatedDimensions.length; i++) {
             const dimensionName = updatedDimensions[i];
             const colorIndex = (i - 1) % colors.seriesColors.length;
 
@@ -327,7 +326,6 @@ export default function SearchStudent() {
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
                   formatter: function (params) {
-                    // 使用闭包捕获的 dimensionName
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -350,7 +348,6 @@ export default function SearchStudent() {
                   textBorderColor: theme === 'dark' ? '#000' : '#fff',
                   textBorderWidth: 2,
                   formatter: function (params) {
-                    // 使用闭包捕获的 dimensionName
                     const value = params.data[dimensionName];
                     return `${params.seriesName}: ${value}`;
                   }
@@ -439,7 +436,7 @@ export default function SearchStudent() {
         window.removeEventListener('resize', handleResize)
       }
     })
-  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme, chartInstance, getChartColors]) // 修复：添加缺失的依赖项
+  }, [studentsData, selectedSubjects, selectedDisplayOptions, selectedStudent, theme, chartInstance, getChartColors])
 
   // 其他函数保持不变...
   const handleInputChange = (e) => {
