@@ -29,7 +29,7 @@ export function Hero() {
         </a>{" "}
         and{" "}
         <a
-          href="/protectedech"
+          href="/echarts"
           className="font-bold hover:underline"
           rel="noreferrer"
         >

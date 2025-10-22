@@ -16,11 +16,11 @@ export default function ProtectedLayout({
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm"> {/* 改为 max-w-7xl */}
             <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>首页</Link> {/* 汉化 */}
-              <Link href={"/echarts"}>图表页面</Link> {/* 添加图表页面链接 */}
               <div className="flex items-center gap-2">
                 <DeployButton />
               </div>
+              <Link href={"/echarts"}>图表页面</Link> 
+              <Link href={"/profile"}>个人中心</Link>
             </div>
             {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
           </div>
