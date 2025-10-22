@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Checkbox } from "@/components/ui/checkbox" // 导入自定义复选框组件
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -24,7 +24,7 @@ export default function ProfilePage() {
     full_name: '',
     class: '',
     role: '学生',
-    grade: [] // grade 字段，text[] 类型，存储选中的年级
+    grade: []
   })
 
   // 获取用户资料
@@ -32,7 +32,6 @@ export default function ProfilePage() {
     try {
       const supabase = createClient()
       
-      // 获取当前用户
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -41,7 +40,6 @@ export default function ProfilePage() {
         return
       }
 
-      // 获取用户资料
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -55,7 +53,6 @@ export default function ProfilePage() {
         return
       }
 
-      // 如果用户没有profile记录，创建默认记录
       if (!profileData) {
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
@@ -106,7 +103,6 @@ export default function ProfilePage() {
     }
   }
 
-  // 组件挂载时获取资料
   useEffect(() => {
     fetchProfile()
   }, [])
@@ -119,17 +115,14 @@ export default function ProfilePage() {
     }))
   }
 
-  // 处理年级选项的选择/取消选择 - 适配自定义 Checkbox 组件
   const handleGradeCheckedChange = (gradeValue, checked) => {
     setFormData(prev => {
       if (checked) {
-        // 添加年级到数组
         return {
           ...prev,
           grade: [...prev.grade, gradeValue]
         }
       } else {
-        // 从数组中移除年级
         return {
           ...prev,
           grade: prev.grade.filter(item => item !== gradeValue)
@@ -160,7 +153,6 @@ export default function ProfilePage() {
       setMessage('资料更新成功！')
       setIsEditing(false)
       
-      // 重新获取最新资料
       await fetchProfile()
       
       setTimeout(() => setMessage(''), 3000)
@@ -171,7 +163,6 @@ export default function ProfilePage() {
   }
 
   const handleCancel = () => {
-    // 重置表单数据为原始profile数据
     setFormData({
       username: profile.username || '',
       full_name: profile.full_name || '',
@@ -184,178 +175,201 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return <div className="max-w-2xl mx-auto p-6">加载中...</div>
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    )
   }
 
   if (!profile) {
-    return <div className="max-w-2xl mx-auto p-6">{message || '请先登录'}</div>
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-muted-foreground">{message || '请先登录'}</div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">个人资料</h1>
-        {!isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-          >
-            编辑资料
-          </button>
-        )}
-      </div>
-
-      {message && (
-        <div className={`mb-4 p-3 rounded-md ${
-          message.includes('失败') 
-            ? 'bg-red-100 text-red-700 border border-red-300' 
-            : 'bg-green-100 text-green-700 border border-green-300'
-        }`}>
-          {message}
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {/* 用户名 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            用户名
-          </label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ) : (
-            <p className="text-gray-900">{profile.username || '未设置'}</p>
-          )}
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-card text-card-foreground rounded-lg border shadow-sm">
+        <div className="flex flex-col space-y-1.5 p-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-semibold">个人资料</h1>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+              >
+                编辑资料
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* 真实姓名 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            真实姓名
-          </label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ) : (
-            <p className="text-gray-900">{profile.full_name || '未设置'}</p>
-          )}
-        </div>
-
-        {/* 班级 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            班级
-          </label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="class"
-              value={formData.class}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="例如：1班、2班"
-            />
-          ) : (
-            <p className="text-gray-900">{profile.class || '未设置'}</p>
-          )}
-        </div>
-
-        {/* Grade 字段 (text[] 数组) - 使用美化的 Checkbox 组件 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            年级信息
-          </label>
-          {isEditing ? (
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">请选择您所在的年级（可多选）</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {gradeOptions.map((gradeOption) => (
-                  <div key={gradeOption} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`grade-${gradeOption}`}
-                      checked={formData.grade.includes(gradeOption)}
-                      onCheckedChange={(checked) => handleGradeCheckedChange(gradeOption, checked)}
-                      className="text-blue-600 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor={`grade-${gradeOption}`}
-                      className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                      {gradeOption}
-                    </label>
-                  </div>
-                ))}
-              </div>
+        <div className="p-6 pt-0">
+          {message && (
+            <div className={`mb-6 p-3 rounded-md border ${
+              message.includes('失败') 
+                ? 'bg-destructive/10 text-destructive-foreground border-destructive/20' 
+                : 'bg-success/10 text-success-foreground border-success/20'
+            }`}>
+              {message}
             </div>
-          ) : (
-            <div>
-              {profile.grade && profile.grade.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.grade.map((gradeItem, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                    >
-                      {gradeItem}
-                    </span>
-                  ))}
-                </div>
+          )}
+
+          <div className="space-y-6">
+            {/* 用户名 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                用户名
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
               ) : (
-                <p className="text-gray-500">未设置年级信息</p>
+                <div className="text-sm text-foreground p-2 rounded-md bg-muted/50">
+                  {profile.username || '未设置'}
+                </div>
               )}
             </div>
-          )}
-        </div>
 
-        {/* 角色 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            身份
-          </label>
-          {isEditing ? (
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="学生">学生</option>
-              <option value="家长">家长</option>
-              <option value="教师">教师</option>
-            </select>
-          ) : (
-            <p className="text-gray-900">{profile.role || '未设置'}</p>
-          )}
-        </div>
+            {/* 真实姓名 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                真实姓名
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleInputChange}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              ) : (
+                <div className="text-sm text-foreground p-2 rounded-md bg-muted/50">
+                  {profile.full_name || '未设置'}
+                </div>
+              )}
+            </div>
 
-        {/* 编辑按钮 */}
-        {isEditing && (
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-            >
-              保存
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-            >
-              取消
-            </button>
+            {/* 班级 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                班级
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="class"
+                  value={formData.class}
+                  onChange={handleInputChange}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="例如：1班、2班"
+                />
+              ) : (
+                <div className="text-sm text-foreground p-2 rounded-md bg-muted/50">
+                  {profile.class || '未设置'}
+                </div>
+              )}
+            </div>
+
+            {/* 年级信息 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                年级信息
+              </label>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">请选择您所在的年级（可多选）</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {gradeOptions.map((gradeOption) => (
+                      <div key={gradeOption} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`grade-${gradeOption}`}
+                          checked={formData.grade.includes(gradeOption)}
+                          onCheckedChange={(checked) => handleGradeCheckedChange(gradeOption, checked)}
+                        />
+                        <label
+                          htmlFor={`grade-${gradeOption}`}
+                          className="text-sm font-medium leading-none cursor-pointer"
+                        >
+                          {gradeOption}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {profile.grade && profile.grade.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.grade.map((gradeItem, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground"
+                        >
+                          {gradeItem}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground p-2 rounded-md bg-muted/50">
+                      未设置年级信息
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 身份 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                身份
+              </label>
+              {isEditing ? (
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="学生">学生</option>
+                  <option value="家长">家长</option>
+                  <option value="教师">教师</option>
+                </select>
+              ) : (
+                <div className="text-sm text-foreground p-2 rounded-md bg-muted/50">
+                  {profile.role || '未设置'}
+                </div>
+              )}
+            </div>
+
+            {/* 编辑按钮 */}
+            {isEditing && (
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                >
+                  保存
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                >
+                  取消
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
