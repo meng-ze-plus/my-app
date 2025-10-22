@@ -10,7 +10,7 @@ export default function ProfileClient({ profile }) {
     full_name: profile.full_name || '',
     年级: profile.年级 || '',
     class: profile.class || '',
-    role: profile.role || 'student'
+    role: profile.role || ''
   })
   const [message, setMessage] = useState('')
 
