@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Checkbox } from "@/components/ui/checkbox" // 导入自定义复选框组件
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -9,13 +10,21 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
 
+  // 年级选项
+  const gradeOptions = [
+    '高2022级',
+    '高2023级', 
+    '高2024级',
+    '高2025级'
+  ]
+
   // 初始化表单数据
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
     class: '',
-    role: '学生', // 默认值设为中文
-    grade: [] // grade 字段，text[] 类型
+    role: '学生',
+    grade: [] // grade 字段，text[] 类型，存储选中的年级
   })
 
   // 获取用户资料
@@ -56,7 +65,7 @@ export default function ProfilePage() {
               username: user.email?.split('@')[0] || 'user',
               full_name: '',
               class: '',
-              role: '学生', // 使用中文默认值
+              role: '学生',
               grade: []
             }
           ])
@@ -75,7 +84,7 @@ export default function ProfilePage() {
           username: newProfile.username || '',
           full_name: newProfile.full_name || '',
           class: newProfile.class || '',
-          role: newProfile.role || '学生', // 使用中文默认值
+          role: newProfile.role || '学生',
           grade: newProfile.grade || []
         })
       } else {
@@ -84,7 +93,7 @@ export default function ProfilePage() {
           username: profileData.username || '',
           full_name: profileData.full_name || '',
           class: profileData.class || '',
-          role: profileData.role || '学生', // 使用中文默认值
+          role: profileData.role || '学生',
           grade: profileData.grade || []
         })
       }
@@ -110,28 +119,23 @@ export default function ProfilePage() {
     }))
   }
 
-  // 处理 grade 数组的添加
-  const handleAddGrade = () => {
-    setFormData(prev => ({
-      ...prev,
-      grade: [...prev.grade, ''] // 添加一个空字符串
-    }))
-  }
-
-  // 处理 grade 数组的删除
-  const handleRemoveGrade = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      grade: prev.grade.filter((_, i) => i !== index)
-    }))
-  }
-
-  // 处理 grade 数组单项的修改
-  const handleGradeChange = (index, value) => {
-    setFormData(prev => ({
-      ...prev,
-      grade: prev.grade.map((item, i) => i === index ? value : item)
-    }))
+  // 处理年级选项的选择/取消选择 - 适配自定义 Checkbox 组件
+  const handleGradeCheckedChange = (gradeValue, checked) => {
+    setFormData(prev => {
+      if (checked) {
+        // 添加年级到数组
+        return {
+          ...prev,
+          grade: [...prev.grade, gradeValue]
+        }
+      } else {
+        // 从数组中移除年级
+        return {
+          ...prev,
+          grade: prev.grade.filter(item => item !== gradeValue)
+        }
+      }
+    })
   }
 
   const handleSave = async () => {
@@ -144,7 +148,7 @@ export default function ProfilePage() {
           username: formData.username,
           full_name: formData.full_name,
           class: formData.class,
-          role: formData.role, // 使用中文值
+          role: formData.role,
           grade: formData.grade
         })
         .eq('id', profile.id)
@@ -172,7 +176,7 @@ export default function ProfilePage() {
       username: profile.username || '',
       full_name: profile.full_name || '',
       class: profile.class || '',
-      role: profile.role || '学生', // 使用中文默认值
+      role: profile.role || '学生',
       grade: profile.grade || []
     })
     setIsEditing(false)
@@ -267,39 +271,32 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Grade 字段 (text[] 数组) - 现在作为年级信息 */}
+        {/* Grade 字段 (text[] 数组) - 使用美化的 Checkbox 组件 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             年级信息
           </label>
           {isEditing ? (
             <div className="space-y-2">
-              {formData.grade.map((gradeItem, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={gradeItem}
-                    onChange={(e) => handleGradeChange(index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="输入年级信息，例如：一年级、二年级"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveGrade(index)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                  >
-                    删除
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddGrade}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-              >
-                添加年级信息
-              </button>
-              <p className="text-sm text-gray-500">可以添加多个年级信息</p>
+              <p className="text-sm text-gray-500">请选择您所在的年级（可多选）</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {gradeOptions.map((gradeOption) => (
+                  <div key={gradeOption} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`grade-${gradeOption}`}
+                      checked={formData.grade.includes(gradeOption)}
+                      onCheckedChange={(checked) => handleGradeCheckedChange(gradeOption, checked)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor={`grade-${gradeOption}`}
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      {gradeOption}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div>
@@ -321,7 +318,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* 角色 - 使用中文选项 */}
+        {/* 角色 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             身份
@@ -341,7 +338,6 @@ export default function ProfilePage() {
             <p className="text-gray-900">{profile.role || '未设置'}</p>
           )}
         </div>
-
 
         {/* 编辑按钮 */}
         {isEditing && (
